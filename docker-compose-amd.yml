@@ -1,0 +1,57 @@
+version: '3.6'
+services:
+  telegraf:
+    image: mihudec/telegraf-snmp-net
+    container_name: telegraf
+    restart: on-failure
+    #env_file:
+      #- tig.env
+    volumes:
+     - ./telegraf.conf:/etc/telegraf/telegraf.conf:ro
+     - telegraf_data:$HOME/volumes/telegraf
+    depends_on:
+      - influxdb
+    links:
+      - influxdb
+    ports:
+    - '8125:8125'
+
+  influxdb:
+    image: influxdb
+    #platform: linux/amd64
+    container_name: influxdb
+    restart: always
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=${MODE}
+      - DOCKER_INFLUXDB_INIT_USERNAME=${USERNAME}
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${PASSWORD}
+      - DOCKER_INFLUXDB_INIT_ORG=${ORG}
+      - DOCKER_INFLUXDB_INIT_BUCKET=${BUCKET}
+      #- DOCKER_INFLUXDB_INIT_RETENTION=
+      #- DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=
+    ports:
+      - '8086:8086'
+    volumes:
+      - influxdb_data:$HOME/volumes/influxdb
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana-server
+    restart: always
+    depends_on:
+      - influxdb
+    environment:
+      - GF_SECURITY_ADMIN_USER=${USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${AUTH}
+      - GF_INSTALL_PLUGINS=
+    links:
+      - influxdb
+    ports:
+      - '3000:3000'
+    volumes:
+      - grafana_data:$HOME/volumes/grafana
+
+volumes:
+  grafana_data: {}
+  influxdb_data: {}
+  telegraf_data: {}
